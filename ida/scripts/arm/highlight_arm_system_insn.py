@@ -2650,7 +2650,7 @@ def markup_system_insn(ea):
     elif mnem in CRYPTO_INSN:
         summary_info["Cryptography"].add(function_name_or_address(ea))
 
-    set_color(ea, CIC_ITEM, 0x00000000)  # Black background, adjust to your own theme
+    # set_color(ea, CIC_ITEM, 0x00000000)  # Black background, adjust to your own theme
 
 
 def current_arch_size():
