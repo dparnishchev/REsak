@@ -2390,7 +2390,7 @@ def backtrack_fields(ea, reg, fields, cmt_type=None):
             if reduced_mnem == "LDR" and print_operand(ea, 1)[0] == "=":
                 bits = extract_set_fields(fields, get_wide_dword(get_operand_value(ea, 1)))
                 if len(bits) > 0:
-                    set_cmt(ea, cmt_formatter[cmt_type or reduced_mnem](bits), 0)
+                    make_comment(ea, cmt_formatter[cmt_type or reduced_mnem](bits))
                 break
             #
             # MOVK Rd, #imm,LSL#shift
@@ -2398,21 +2398,21 @@ def backtrack_fields(ea, reg, fields, cmt_type=None):
             elif mnem == "MOVK":
                 bits = extract_set_fields(fields, movk_operand_value(ea))
                 if len(bits) > 0:
-                    set_cmt(ea, cmt_formatter[cmt_type or reduced_mnem](bits), 0)
+                    make_comment(ea, cmt_formatter[cmt_type or reduced_mnem](bits))
             #
             # MOVT Rd, #imm
             #
             elif mnem == "MOVT":
                 bits = extract_set_fields(fields, movt_operand_value(ea))
                 if len(bits) > 0:
-                    set_cmt(ea, cmt_formatter[cmt_type or reduced_mnem](bits), 0)
+                    make_comment(ea, cmt_formatter[cmt_type or reduced_mnem](bits))
             #
             # MOV Rd, #imm
             #
             elif reduced_mnem == "MOV" and print_operand(ea, 1)[0] == "#":
                 bits = extract_set_fields(fields, get_operand_value(ea, 1))
                 if len(bits) > 0:
-                    set_cmt(ea, cmt_formatter[cmt_type or reduced_mnem](bits), 0)
+                    make_comment(ea, cmt_formatter[cmt_type or reduced_mnem](bits))
                 break
             #
             # MOV Rd, Rn
@@ -2428,7 +2428,7 @@ def backtrack_fields(ea, reg, fields, cmt_type=None):
                 reg1 = print_operand(ea, 1)
                 bits = extract_set_fields(fields, get_operand_value(ea, 2))
                 if len(bits) > 0:
-                    set_cmt(ea, cmt_formatter[cmt_type or reduced_mnem](bits), 0)
+                    make_comment(ea, cmt_formatter[cmt_type or reduced_mnem](bits))
                 if not is_same_register(reg1, reg):
                     backtrack_fields(ea, reg1, fields, (cmt_type or reduced_mnem))
                     break
@@ -2452,7 +2452,7 @@ def backtrack_fields(ea, reg, fields, cmt_type=None):
                 mask = get_operand_value(ea, 2)
                 bits = extract_test_fields(fields, ((~mask) & ((1 << (register_size(print_operand(ea, 0)) * 8)) - 1)))
                 if len(bits) > 0:
-                    set_cmt(ea, cmt_formatter[cmt_type or reduced_mnem](bits), 0)
+                    make_comment(ea, cmt_formatter[cmt_type or reduced_mnem](bits))
                 if not is_same_register(reg1, reg):
                     backtrack_fields(ea, reg1, fields, (cmt_type or reduced_mnem))
                     break
@@ -2472,18 +2472,18 @@ def track_fields(ea, reg, fields):
                 print_operand(ea, 1)[0] == "#":
             bits = extract_set_fields(fields, get_operand_value(ea, 1))
             if len(bits) > 0:
-                set_cmt(ea, "Test field %s" % ", ".join(name for (name, desc) in bits), 0)
+                make_comment(ea, "Test field %s" % ", ".join(name for (name, desc) in bits))
         elif next_mnem[0:3] == "AND" and is_same_register(print_operand(ea, 1), reg) and print_operand(ea, 2)[0] == "#":
             bits = extract_test_fields(fields, get_operand_value(ea, 2))
             if len(bits) > 0:
-                set_cmt(ea, "Field %s" % ", ".join(desc for (name, desc) in bits), 0)
+                make_comment(ea, "Field %s" % ", ".join(desc for (name, desc) in bits))
             if is_same_register(print_operand(ea, 0), reg):
                 break
         elif next_mnem[0:3] == "LSL" and GetDisasm(ea)[3] == "S" and is_same_register(print_operand(ea, 1), reg) and \
                 print_operand(ea, 2)[0] == "#":
             bits = extract_test_fields(fields, 1 << (31 - get_operand_value(ea, 2)))
             if len(bits) > 0:
-                set_cmt(ea, "Test bit %s" % ", ".join(desc for (name, desc) in bits), 0)
+                make_comment(ea, "Test bit %s" % ", ".join(desc for (name, desc) in bits))
             if is_same_register(print_operand(ea, 0), reg):
                 break
         elif next_mnem == "UBFX" and is_same_register(print_operand(ea, 1), reg):
@@ -2491,7 +2491,7 @@ def track_fields(ea, reg, fields):
             width = get_operand_value(ea, 3)
             field = find_bitfield(fields, lsb, width)
             if field:
-                set_cmt(ea, "Extract %s" % field[1], 0)
+                make_comment(ea, "Extract %s" % field[1])
             if is_same_register(print_operand(ea, 0), reg):
                 break
         elif backtrack_can_skip_insn(ea, reg):
@@ -2513,7 +2513,7 @@ def identify_register(ea, access, sig, known_regs, cpu_reg=None, known_fields=No
     desc = known_regs.get(sig, None)
     if desc:
         cmt = ("[%s] " + "\n or ".join(["%s (%s)"] * (len(desc) // 2))) % ((access,) + desc)
-        set_cmt(ea, cmt, 0)
+        make_comment(ea, cmt)
         print("%x: %s" % (ea, cmt))
 
         save_summary_info(ea, desc[0])
@@ -2527,7 +2527,7 @@ def identify_register(ea, access, sig, known_regs, cpu_reg=None, known_fields=No
                 track_fields(ea, cpu_reg, fields)
     else:
         print("%x: Cannot identify system register." % ea)
-        set_cmt(ea, "[%s] Unknown system register." % access, 0)
+        make_comment(ea, "[%s] Unknown system register." % access)
 
 
 def markup_coproc_reg64_insn(ea):
@@ -2579,7 +2579,7 @@ def markup_aarch64_sys_insn(ea):
         name = "S3_{}_{}_{}_{}".format(op1, crn, crm, op2).upper()
         desc = "IMPLEMENTATION DEFINED"
         cmt = "[%s] %s (%s)" % (access, name, desc)
-        set_cmt(ea, cmt, 0)
+        make_comment(ea, cmt)
         print("%x: %s" % (ea, cmt))
         return
 
@@ -2611,7 +2611,7 @@ def markup_psr_insn(ea):
         i = (psr & (1 << 7)) and 'I' or '-'
         f = (psr & (1 << 6)) and 'F' or '-'
         t = (psr & (1 << 5)) and 'T' or '-'
-        set_cmt(ea, "Set CPSR [%c%c%c%c%c], Mode: %s" % (e, a, i, f, t, mode), 0)
+        make_comment(ea, "Set CPSR [%c%c%c%c%c], Mode: %s" % (e, a, i, f, t, mode))
 
 
 def markup_pstate_insn(ea):
@@ -2619,13 +2619,13 @@ def markup_pstate_insn(ea):
         op = PSTATE_OPS.get(get_operand_value(ea, 0), "Unknown")
         value = get_operand_value(ea, 1)
         if op == "SPSel":
-            set_cmt(ea, "Select PSTATE.SP = SP_EL%c" % ('0', 'x')[value & 1], 0)
+            make_comment(ea, "Select PSTATE.SP = SP_EL%c" % ('0', 'x')[value & 1])
         elif op[0:4] == "DAIF":
             d = (value & (1 << 3)) and 'D' or '-'
             a = (value & (1 << 2)) and 'A' or '-'
             i = (value & (1 << 1)) and 'I' or '-'
             f = (value & (1 << 0)) and 'F' or '-'
-            set_cmt(ea, "%s PSTATE.DAIF [%c%c%c%c]" % (op[4:7], d, a, i, f), 0)
+            make_comment(ea, "%s PSTATE.DAIF [%c%c%c%c]" % (op[4:7], d, a, i, f))
 
 
 def markup_system_insn(ea):
@@ -2656,6 +2656,21 @@ def markup_system_insn(ea):
 def current_arch_size():
     _, t, _ = parse_decl("void *", 0)
     return SizeOf(t) * 8
+
+
+def make_comment(ea, cmt):
+    set_cmt(ea, cmt, 0)
+    make_decompiler_comment(ea, cmt)
+
+
+def make_decompiler_comment(ea, cmt):
+    cfunc = idaapi.decompile(ea)
+    if cfunc:
+        tl = idaapi.treeloc_t()
+        tl.ea = ea
+        tl.itp = idaapi.ITP_SEMI
+        cfunc.set_user_cmt(tl, cmt)
+        cfunc.save_user_cmts()
 
 
 def print_summary():
