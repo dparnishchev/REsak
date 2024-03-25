@@ -235,6 +235,16 @@ AARCH32_COPROC_REGISTERS = {
     ("p15", "c6", 4, "c0", 2): ("HIFAR", "Hyp Instruction Fault Address Register"),
     ("p15", "c6", 4, "c0", 4): ("HPFAR", "Hyp IPA Fault Address Register"),
 
+    # MPU Region registers
+    ("p15", "c6", 0, "c1", 0): ("DRBAR", "Data Region Base Address Register"),
+    ("p15", "c6", 0, "c1", 1): ("IRBAR", "Instruction Region Base Address Register"),
+    ("p15", "c6", 0, "c1", 2): ("DRSR", "Data Region Size and Enable Register"),
+    ("p15", "c6", 0, "c1", 3): ("IRSR", "Instruction Region Size and Enable Register"),
+    ("p15", "c6", 0, "c1", 4): ("DRACR", "Data Region Access Control Register"),
+    ("p15", "c6", 0, "c1", 5): ("IRACR", "Instruction Region Access Control Register"),
+
+    ("p15", "c6", 0, "c2", 0): ("RGNR", "MPU Region Number Register"),
+
     # Cache maintenance registers
     ("p15", "c7", 0, "c0", 4): ("NOP", "No Operation / Wait For Interrupt"),
     ("p15", "c7", 0, "c1", 0): ("ICIALLUIS", "Instruction Cache Invalidate All to PoU, Inner Shareable"),
